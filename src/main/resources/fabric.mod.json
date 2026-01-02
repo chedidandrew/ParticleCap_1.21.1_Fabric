@@ -13,6 +13,9 @@
 	"entrypoints": {
 		"client": [
 			"com.chedidandrew.particlecap.ParticleCapMod"
+		],
+		"modmenu": [
+			"com.chedidandrew.particlecap.ParticleCapModMenuIntegration"
 		]
 	},
 	"mixins": [
