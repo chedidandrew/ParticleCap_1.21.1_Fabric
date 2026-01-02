@@ -1,5 +1,6 @@
 package com.chedidandrew.particlecap.mixin;
 
+import com.chedidandrew.particlecap.ParticleCapConfig;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -22,7 +23,6 @@ import java.util.Set;
 
 @Mixin(ParticleManager.class)
 public abstract class ParticleManagerMixin {
-    private static final int PARTICLE_LIMIT = 5000;
 
     @Shadow
     private Map<ParticleTextureSheet, Queue<Particle>> particles;
@@ -36,19 +36,20 @@ public abstract class ParticleManagerMixin {
         ClientPlayerEntity player = client.player;
         if (player == null) return;
 
+        int limit = ParticleCapConfig.instance.particleLimit;
+
         int total = 0;
         for (Queue<Particle> q : particles.values()) {
             total += q.size();
         }
-        if (total <= PARTICLE_LIMIT) return;
+        if (total <= limit) return;
 
         final double px = player.getX();
         final double py = player.getY();
         final double pz = player.getZ();
 
-        // Keep the nearest PARTICLE_LIMIT particles using a fixed-size max-heap keyed by distance.
-        final Particle[] heapParticles = new Particle[PARTICLE_LIMIT];
-        final double[] heapDistSq = new double[PARTICLE_LIMIT];
+        final Particle[] heapParticles = new Particle[limit];
+        final double[] heapDistSq = new double[limit];
         int heapSize = 0;
 
         for (Queue<Particle> q : particles.values()) {
@@ -59,7 +60,7 @@ public abstract class ParticleManagerMixin {
                 double dz = acc.particlecap$getZ() - pz;
                 double distSq = dx * dx + dy * dy + dz * dz;
 
-                if (heapSize < PARTICLE_LIMIT) {
+                if (heapSize < limit) {
                     heapParticles[heapSize] = p;
                     heapDistSq[heapSize] = distSq;
                     heapSiftUp(heapParticles, heapDistSq, heapSize);
@@ -101,7 +102,6 @@ public abstract class ParticleManagerMixin {
         });
     }
 
-    // Max-heap helpers for parallel arrays (heapDistSq is the key, largest at root).
     private static void heapSiftUp(Particle[] ps, double[] ds, int idx) {
         while (idx > 0) {
             int parent = (idx - 1) >>> 1;
