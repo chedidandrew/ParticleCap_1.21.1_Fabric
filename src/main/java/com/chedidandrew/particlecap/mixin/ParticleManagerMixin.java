@@ -36,7 +36,7 @@ public abstract class ParticleManagerMixin {
         ClientPlayerEntity player = client.player;
         if (player == null) return;
 
-        int limit = ParticleCapConfig.instance.particleLimit;
+        int limit = Math.max(0, ParticleCapConfig.instance.particleLimit);
 
         int total = 0;
         for (Queue<Particle> q : particles.values()) {

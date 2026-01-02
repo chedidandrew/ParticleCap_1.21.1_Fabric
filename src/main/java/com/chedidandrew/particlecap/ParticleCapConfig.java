@@ -28,6 +28,11 @@ public class ParticleCapConfig {
         } else {
             save();
         }
+
+        if (instance.particleLimit < 0) {
+            instance.particleLimit = 0;
+            save(); // Rewrite the file with the corrected value
+        }
     }
 
     public static void save() {

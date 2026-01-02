@@ -20,6 +20,7 @@ public class ParticleCapModMenuIntegration implements ModMenuApi {
 
             general.addEntry(entryBuilder.startIntField(Text.of("Particle Limit"), ParticleCapConfig.instance.particleLimit)
                     .setDefaultValue(5000)
+                    .setMin(0)
                     .setTooltip(Text.of("The maximum number of particles allowed."))
                     .setSaveConsumer(newValue -> ParticleCapConfig.instance.particleLimit = newValue)
                     .build());
