@@ -38,6 +38,16 @@ public abstract class ParticleManagerMixin {
         if (player == null) return;
 
         int limit = Math.max(0, ParticleCapConfig.instance.particleLimit);
+        boolean strictCulling = ParticleCapConfig.instance.strictCameraCulling;
+
+        // If not using strict culling, we can optimize by only running when the limit is exceeded.
+        if (!strictCulling) {
+            int total = 0;
+            for (Queue<Particle> q : particles.values()) {
+                total += q.size();
+            }
+            if (total <= limit) return;
+        }
 
         // Logic to calculate frustum culling parameters
         Vec3d camPos = player.getEyePos();
@@ -45,13 +55,15 @@ public abstract class ParticleManagerMixin {
         // Get FOV and add a buffer (e.g., 30 degrees) to prevent popping at screen edges
         double fov = client.options.getFov().getValue();
         double frustumThreshold = Math.cos(Math.toRadians((fov / 2.0) + 30.0));
+        // Penalty for being outside the frustum (effectively "infinite" distance)
+        double frustumPenalty = 1.0e10;
 
         final double px = player.getX();
         final double py = player.getY();
         final double pz = player.getZ();
 
         final Particle[] heapParticles = new Particle[limit];
-        final double[] heapDistSq = new double[limit];
+        final double[] heapScores = new double[limit];
         int heapSize = 0;
 
         for (Queue<Particle> q : particles.values()) {
@@ -74,24 +86,30 @@ public abstract class ParticleManagerMixin {
                      }
                 }
 
-                // If not in frustum, skip adding to heap -> it will be removed
-                if (!inFrustum) continue;
+                // If strict culling is enabled, completely ignore/remove invisible particles
+                if (strictCulling && !inFrustum) continue;
 
-                // 2. Limit Check: If visible, compete for a slot based on distance
+                // 2. Score Calculation
                 double dx = acc.particlecap$getX() - px;
                 double dy = acc.particlecap$getY() - py;
                 double dz = acc.particlecap$getZ() - pz;
                 double distSq = dx * dx + dy * dy + dz * dz;
 
+                double score = distSq;
+                // If standard culling (not strict), use penalty to prioritize keeping visible particles
+                if (!strictCulling && !inFrustum) {
+                    score += frustumPenalty;
+                }
+
                 if (heapSize < limit) {
                     heapParticles[heapSize] = p;
-                    heapDistSq[heapSize] = distSq;
-                    heapSiftUp(heapParticles, heapDistSq, heapSize);
+                    heapScores[heapSize] = score;
+                    heapSiftUp(heapParticles, heapScores, heapSize);
                     heapSize++;
-                } else if (distSq < heapDistSq[0]) {
+                } else if (score < heapScores[0]) {
                     heapParticles[0] = p;
-                    heapDistSq[0] = distSq;
-                    heapSiftDown(heapParticles, heapDistSq, heapSize, 0);
+                    heapScores[0] = score;
+                    heapSiftDown(heapParticles, heapScores, heapSize, 0);
                 }
             }
         }

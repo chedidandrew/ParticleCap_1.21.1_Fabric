@@ -25,6 +25,12 @@ public class ParticleCapModMenuIntegration implements ModMenuApi {
                     .setSaveConsumer(newValue -> ParticleCapConfig.instance.particleLimit = newValue)
                     .build());
 
+            general.addEntry(entryBuilder.startBooleanToggle(Text.of("Strict Camera Culling"), ParticleCapConfig.instance.strictCameraCulling)
+                    .setDefaultValue(false)
+                    .setTooltip(Text.of("Aggressively removes particles outside the camera view, even if below the limit."))
+                    .setSaveConsumer(newValue -> ParticleCapConfig.instance.strictCameraCulling = newValue)
+                    .build());
+
             builder.setSavingRunnable(ParticleCapConfig::save);
 
             return builder.build();
