@@ -19,6 +19,7 @@
 
 * **Default limit:** `5000`
 * **Minimum limit:** `0`
+* **Strict Camera Culling:** `true` (Default) - Aggressively removes particles outside the camera view.
 
 ### Edit methods
 
@@ -31,11 +32,11 @@
 
 Requires **Fabric Loader**.
 
-| Dependency           | Required | Purpose                                         |
-| -------------------- | -------- | ----------------------------------------------- |
-| **Fabric API**       | Yes      | Core Fabric utilities used by the mod           |
-| **Cloth Config API** | Optional | Settings screen and config support              |
-| **Mod Menu**         | Optional | Adds the in game Mods button and settings entry |
+| Dependency            | Required | Purpose                                         |
+| --------------------- | -------- | ----------------------------------------------- |
+| **Fabric API**        | Yes      | Core Fabric utilities used by the mod           |
+| **Cloth Config API**  | Optional | Settings screen and config support              |
+| **Mod Menu**          | Optional | Adds the in game Mods button and settings entry |
 
 ---
 
@@ -48,11 +49,13 @@ Requires **Fabric Loader**.
 
 ## How it works
 
-Particle Cap uses Mixins to hook into Minecraft’s `ParticleManager`. Each tick, if the total particle count exceeds the limit:
+Particle Cap uses Mixins to hook into Minecraft’s `ParticleManager`. Each tick:
 
-1. Measure distance from the player to each active particle
-2. Identify the farthest particles
-3. Remove the excess so the total stays under the cap
+1. If **Strict Camera Culling** is enabled, particles outside the view frustum are removed immediately.
+2. If the total particle count still exceeds the limit:
+    * Measure distance from the player to each active particle
+    * Identify the farthest particles
+    * Remove the excess so the total stays under the cap
 
 ---
 
