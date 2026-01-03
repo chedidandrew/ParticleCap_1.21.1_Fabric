@@ -8,6 +8,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.particle.ParticleTextureSheet;
 import net.minecraft.particle.ParticleGroup;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -38,11 +39,12 @@ public abstract class ParticleManagerMixin {
 
         int limit = Math.max(0, ParticleCapConfig.instance.particleLimit);
 
-        int total = 0;
-        for (Queue<Particle> q : particles.values()) {
-            total += q.size();
-        }
-        if (total <= limit) return;
+        // Logic to calculate frustum culling parameters
+        Vec3d camPos = player.getEyePos();
+        Vec3d camDir = player.getRotationVec(1.0F);
+        // Get FOV and add a buffer (e.g., 30 degrees) to prevent popping at screen edges
+        double fov = client.options.getFov().getValue();
+        double frustumThreshold = Math.cos(Math.toRadians((fov / 2.0) + 30.0));
 
         final double px = player.getX();
         final double py = player.getY();
@@ -55,6 +57,27 @@ public abstract class ParticleManagerMixin {
         for (Queue<Particle> q : particles.values()) {
             for (Particle p : q) {
                 ParticleAccessor acc = (ParticleAccessor) p;
+                
+                // 1. Frustum Check: Is the particle visible?
+                double ex = acc.particlecap$getX() - camPos.x;
+                double ey = acc.particlecap$getY() - camPos.y;
+                double ez = acc.particlecap$getZ() - camPos.z;
+                
+                double dot = ex * camDir.x + ey * camDir.y + ez * camDir.z;
+                boolean inFrustum = false;
+
+                // Check if in front of camera (dot > 0) and within the FOV cone
+                if (dot > 0) {
+                     double eDistSq = ex * ex + ey * ey + ez * ez;
+                     if (dot * dot > frustumThreshold * frustumThreshold * eDistSq) {
+                         inFrustum = true;
+                     }
+                }
+
+                // If not in frustum, skip adding to heap -> it will be removed
+                if (!inFrustum) continue;
+
+                // 2. Limit Check: If visible, compete for a slot based on distance
                 double dx = acc.particlecap$getX() - px;
                 double dy = acc.particlecap$getY() - py;
                 double dz = acc.particlecap$getZ() - pz;

@@ -8,11 +8,10 @@
 
 ## Features
 
-* **Smart culling:** When the limit is reached, the mod removes particles **farthest from the player** to make room for new nearby particles.
+* **Smart culling:** When the limit is reached, the mod removes particles **farthest from the player** to make room for new nearby particles. Optional: Only keep particles in front of the camera and within the view frustum for improved performance.
 * **Hard cap protection:** Helps prevent freezes from massive particle spam (farms, explosions, modded effects).
 * **Configurable limit:** Change the maximum particle count anytime.
 * **Mod Menu integration:** In game settings screen support.
-* **Future Planned Update:** Only keep particles in front of the camera and within the view frustum for improved performance.
 
 ---
 
